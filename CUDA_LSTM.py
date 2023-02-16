@@ -380,18 +380,13 @@ def initialize_parameters():
     std = 0.01
 
     # inicializar parametros de LSTM
-    forget_gate_weights = np.random.normal(
-        mean, std, (input_units + hidden_units, hidden_units))
-    input_gate_weights = np.random.normal(
-        mean, std, (input_units + hidden_units, hidden_units))
-    output_gate_weights = np.random.normal(
-        mean, std, (input_units + hidden_units, hidden_units))
-    candidate_gate_weights = np.random.normal(
-        mean, std, (input_units + hidden_units, hidden_units))
+    forget_gate_weights = np.random.normal(mean, std, (input_units + hidden_units, hidden_units))
+    input_gate_weights = np.random.normal(mean, std, (input_units + hidden_units, hidden_units))
+    output_gate_weights = np.random.normal(mean, std, (input_units + hidden_units, hidden_units))
+    candidate_gate_weights = np.random.normal(mean, std, (input_units + hidden_units, hidden_units))
 
     # hidden --> output
-    hidden_output_weights = np.random.normal(
-        mean, std, (hidden_units, output_units))
+    hidden_output_weights = np.random.normal(mean, std, (hidden_units, output_units))
 
     parameters = dict()
     parameters['fgw'] = forget_gate_weights
@@ -414,8 +409,7 @@ def lstm_cell(batch_dataset, prev_activation_matrix, prev_cell_matrix, parameter
     cgw = parameters['cgw']
     # Intregrar operaciones con GPU
     # concatenar input con la activación anterior
-    concat_dataset = np.concatenate(
-        (batch_dataset, prev_activation_matrix), axis=1)
+    concat_dataset = np.concatenate((batch_dataset, prev_activation_matrix), axis=1)
     if IsTraining:
         g1 = concat_dataset.astype(np.float32)
         h1 = fgw.astype(np.float32)
@@ -476,9 +470,8 @@ def lstm_cell(batch_dataset, prev_activation_matrix, prev_cell_matrix, parameter
         cuda.memcpy_htod(activation_matrix_gpu, activation_matrix)
 
         bsHddnPlusIn_hddnPlusInHddn(g_gpu1, h_gpu1, i_gpu1, h_gpu2, i_gpu2, h_gpu3, i_gpu3, h_gpu4, i_gpu4, prev_cell_matrix_gpu,
-                                    cell_memory_matrix_gpu, activation_matrix_gpu, block=(
-                                        Tile_size, Tile_size, 1),
-                                    grid=((i4.shape[1] // Tile_size) + 1, (i4.shape[0] // Tile_size) + 1, 1))
+             cell_memory_matrix_gpu, activation_matrix_gpu, block=(Tile_size, Tile_size, 1),
+             grid=((i4.shape[1] // Tile_size) + 1, (i4.shape[0] // Tile_size) + 1, 1))
 
         cuda.memcpy_dtoh(fa, i_gpu1)
         cuda.memcpy_dtoh(ia, i_gpu2)
@@ -505,12 +498,10 @@ def lstm_cell(batch_dataset, prev_activation_matrix, prev_cell_matrix, parameter
         ga = np.matmul(concat_dataset, cgw)
         ga = tanh_activation(ga)
         # actualizar cell memory
-        cell_memory_matrix = np.multiply(
-            fa, prev_cell_matrix) + np.multiply(ia, ga)
+        cell_memory_matrix = np.multiply(fa, prev_cell_matrix) + np.multiply(ia, ga)
 
         # Salida de hidden layer
-        activation_matrix = np.multiply(
-            oa, tanh_activation(cell_memory_matrix))
+        activation_matrix = np.multiply(oa, tanh_activation(cell_memory_matrix))
 
     # Guardar valores de activación para el backpropagation
     lstm_activations = dict()
@@ -601,12 +592,10 @@ def cal_loss_accuracy(batch_labels, output_cache):
         labels = batch_labels[i]
         pred = output_cache['o' + str(i)]
 
-        prob = np.multiply(prob, np.sum(
-            np.multiply(labels, pred), axis=1).reshape(-1, 1))
+        prob = np.multiply(prob, np.sum(np.multiply(labels, pred), axis=1).reshape(-1, 1))
         loss += np.sum((np.multiply(labels, np.log(pred)) + np.multiply(1 - labels, np.log(1 - pred))), axis=1).reshape(
             -1, 1)
-        acc += np.array(np.argmax(labels, 1) == np.argmax(pred,
-                        1), dtype=np.float32).reshape(-1, 1)
+        acc += np.array(np.argmax(labels, 1) == np.argmax(pred, 1), dtype=np.float32).reshape(-1, 1)
 
     # ccosto, perplejidad y precisión
     perplexity = np.sum((1 / prob) ** (1 / len(output_cache))) / batch_size
@@ -663,8 +652,7 @@ def calculate_single_lstm_cell_error(activation_output_error, next_activation_er
 
     # cell activation error
     cell_error = np.multiply(activation_error, oa)
-    cell_error = np.multiply(cell_error, tanh_derivative(
-        tanh_activation(cell_activation)))
+    cell_error = np.multiply(cell_error, tanh_derivative(tanh_activation(cell_activation)))
 
     cell_error += next_cell_error
 
@@ -739,8 +727,7 @@ def calculate_single_lstm_cell_derivatives(lstm_error, embedding_matrix, activat
     eg = lstm_error['eg']
 
     # activaciones de entrada del paso t
-    concat_matrix = np.concatenate(
-        (embedding_matrix, activation_matrix), axis=1)
+    concat_matrix = np.concatenate((embedding_matrix, activation_matrix), axis=1)
 
     batch_size = embedding_matrix.shape[0]
 
@@ -764,8 +751,7 @@ def calculate_single_lstm_cell_derivatives(lstm_error, embedding_matrix, activat
 def backward_propagation(batch_labels, embedding_cache, lstm_cache, activation_cache, cell_cache, output_cache,
                          parameters):
     # calcular errores de output
-    output_error_cache, activation_error_cache = calculate_output_cell_error(
-        batch_labels, output_cache, parameters)
+    output_error_cache, activation_error_cache = calculate_output_cell_error(batch_labels, output_cache, parameters)
 
     # errore de lstm por paso t
     lstm_error_cache = dict()
@@ -782,8 +768,7 @@ def backward_propagation(batch_labels, embedding_cache, lstm_cache, activation_c
     for i in range(len(lstm_cache), 0, -1):
         # calcular errores de lstm para este paso t
         pae, pce, ee, le = calculate_single_lstm_cell_error(activation_error_cache['ea' + str(i)], eat, ect, parameters,
-                                                            lstm_cache['lstm' + str(
-                                                                i)], cell_cache['c' + str(i)],
+                                                            lstm_cache['lstm' + str(i)], cell_cache['c' + str(i)],
                                                             cell_cache['c' + str(i - 1)])
 
         # almacenar en diccionario
@@ -798,15 +783,13 @@ def backward_propagation(batch_labels, embedding_cache, lstm_cache, activation_c
 
     # derivadas de salida
     derivatives = dict()
-    derivatives['dhow'] = calculate_output_cell_derivatives(
-        output_error_cache, activation_cache, parameters)
+    derivatives['dhow'] = calculate_output_cell_derivatives(output_error_cache, activation_cache, parameters)
 
     # calcular derivadas para cada paso t y almacenar en diccionario
     lstm_derivatives = dict()
     for i in range(1, len(lstm_error_cache) + 1):
         lstm_derivatives['dlstm' + str(i)] = calculate_single_lstm_cell_derivatives(lstm_error_cache['elstm' + str(i)],
-                                                                                    embedding_cache['emb' + str(
-                                                                                        i - 1)],
+                                                                                    embedding_cache['emb' + str(i - 1)],
                                                                                     activation_cache['a' + str(i - 1)])
 
     # inicializar derivadas en zeros
@@ -909,8 +892,7 @@ def update_embeddings(embeddings, embedding_error_cache, batch_labels):
 
     # sumatoria de embedding derivatives
     for i in range(len(embedding_error_cache)):
-        embedding_derivatives += np.matmul(
-            batch_labels[i].T, embedding_error_cache['eemb' + str(i)]) / batch_size
+        embedding_derivatives += np.matmul(batch_labels[i].T, embedding_error_cache['eemb' + str(i)]) / batch_size
 
     # actualizar pesos de embeddings
     embeddings = embeddings - learning_rate * embedding_derivatives
@@ -985,12 +967,10 @@ def train(train_dataset, iters=1000, batch_size=20):
                                                                   parameters)
 
         # actualizar parametros
-        parameters, V, S = update_parameters(
-            parameters, derivatives, V, S, step)
+        parameters, V, S = update_parameters(parameters, derivatives, V, S, step)
 
         # actualizar embeddings
-        embeddings = update_embeddings(
-            embeddings, embedding_error_cache, batches)
+        embeddings = update_embeddings(embeddings, embedding_error_cache, batches)
 
         J.append(loss)
         P.append(perplexity)
@@ -1013,8 +993,7 @@ batch_sizee = batch_size
 
 start_time = time.time()
 print("Batch 64, Shared mem tile size 32, 256 hidden")
-embeddings, parameters, J, P, A = train(
-    train_dataset, iters=2500, batch_size=batch_sizee)
+embeddings, parameters, J, P, A = train(train_dataset, iters=2500, batch_size=batch_sizee)
 print("--- %s seconds ---" % (time.time() - start_time))
 
 avg_loss = list()
@@ -1074,8 +1053,7 @@ def predict(parameters, embeddings, id_char, vocab_size):
             # get embeddings
             batch_dataset = get_embeddings(batch_dataset, embeddings)
             # lstm cell
-            lstm_activations, ct, at = lstm_cell(
-                batch_dataset, a0, c0, parameters)
+            lstm_activations, ct, at = lstm_cell(batch_dataset, a0, c0, parameters)
 
             # output cell
             ot = output_cell(at, parameters)
